@@ -5,14 +5,18 @@ import common.api.Tabular;
 import common.api.value.StringValue;
 import common.api.value.Value;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class Spreadsheet implements Tabular {
 
   private Map<CellLocation, Cell> cellMap;
+  private Set<Cell> invalidCells;
 
   public Spreadsheet() {
     this.cellMap = new HashMap<>();
+    this.invalidCells = new LinkedHashSet<>();
   }
 
   @Override
@@ -46,5 +50,13 @@ public class Spreadsheet implements Tabular {
       return cellMap.get(location).getExpression();
     }
     return "";
+  }
+
+  protected boolean shouldBeRecomputed(Cell cell) {
+    return invalidCells.contains(cell);
+  }
+
+  protected void addInvalidCell(Cell cell) {
+    invalidCells.add(cell);
   }
 }
