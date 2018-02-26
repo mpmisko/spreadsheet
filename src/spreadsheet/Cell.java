@@ -1,40 +1,41 @@
 package spreadsheet;
 
-import common.api.CellLocation;
 import common.api.ExpressionUtils;
 import common.api.monitor.Tracker;
 import common.api.value.InvalidValue;
 import common.api.value.StringValue;
 import common.api.value.Value;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Cell implements Tracker<Cell>{
 
   private final Spreadsheet spreadsheet;
-  private final CellLocation location;
   private String expression;
   private Value value;
   private Set<Cell> referencedCells;
   private Set<Tracker<Cell>> cellsReferencedBy;
 
-  public Cell(Spreadsheet spreadsheet, CellLocation location, String expression,
-      Value value) {
+  public Cell(Spreadsheet spreadsheet, String expression, Value value) {
     this.spreadsheet = spreadsheet;
-    this.location = location;
     this.expression = expression;
     this.value = value;
+    this.referencedCells = new HashSet<>();
+    this.cellsReferencedBy = new HashSet<>();
   }
 
-  public Cell(Spreadsheet spreadsheet, CellLocation location) {
-    this.spreadsheet = spreadsheet;
-    this.location = location;
-    expression = "";
-    value = new StringValue("");
+  public Cell(Spreadsheet spreadsheet) {
+    this(spreadsheet, "", new StringValue(""));
   }
 
   @Override
   public void update(Cell changed) {
-
+    if(!spreadsheet.shouldBeRecomputed(this)) {
+      spreadsheet.addInvalidCell(this);
+      setValue(new InvalidValue(expression));
+      notifyTrackers();
+    }
   }
 
   public String getExpression() {
@@ -46,21 +47,29 @@ public class Cell implements Tracker<Cell>{
   }
 
   public void setExpression(String expression) {
-    for (Cell referencedCell : referencedCells) {
-      removeTracker(this);
-    }
+    referencedCells.forEach(cell ->  cell.removeTracker(this));
     referencedCells.clear();
     this.expression = expression;
     setValue(new InvalidValue(expression));
     addToInvalids();
-    Set<CellLocation> referencedCells = ExpressionUtils.getReferencedLocations(expression);
-    //referencedCells.stream().map(location -> spreadsheet.)
+    Set<Cell> newCells = ExpressionUtils
+        .getReferencedLocations(expression)
+        .stream()
+        .map(location -> spreadsheet.getCell(location))
+        .collect(Collectors.toSet());
+    System.out.println(expression + " " + newCells.size());
+    referencedCells = newCells;
+    referencedCells.forEach(cell ->  cell.addTracer(this));
+    notifyTrackers();
   }
 
   public void setValue(Value value) {
     this.value = value;
   }
 
+  protected Set<Cell> getReferencedCells() {
+    return referencedCells;
+  }
 
   private void addToInvalids() {
     if (!spreadsheet.shouldBeRecomputed(this)) {
@@ -70,5 +79,15 @@ public class Cell implements Tracker<Cell>{
 
   private void removeTracker(Tracker<Cell> tracker) {
     cellsReferencedBy.remove(tracker);
+  }
+
+  private void addTracer(Tracker<Cell> tracker) {
+    cellsReferencedBy.add(tracker);
+  }
+
+  private void notifyTrackers(){
+    for (Tracker<Cell> cell : cellsReferencedBy) {
+      cell.update(this);
+    }
   }
 }
