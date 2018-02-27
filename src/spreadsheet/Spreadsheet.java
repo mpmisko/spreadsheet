@@ -2,6 +2,7 @@ package spreadsheet;
 
 import common.api.CellLocation;
 import common.api.Tabular;
+import common.api.value.InvalidValue;
 import common.api.value.LoopValue;
 import common.api.value.StringValue;
 import common.api.value.Value;
@@ -83,18 +84,18 @@ public class Spreadsheet implements Tabular {
   private void checkForLoops(Cell c, LinkedHashSet<Cell> cellsSeen) {
     if(cellsSeen.contains(c)) {
       markAsValidatedLoop(c, cellsSeen);
-      return;
+    } else {
+      cellsSeen.add(c);
+      c.getReferencedCells().forEach(referencedCell -> checkForLoops(referencedCell, cellsSeen));
+      cellsSeen.remove(c);
     }
-
-    cellsSeen.add(c);
-    c.getReferencedCells().forEach(referencedCell -> checkForLoops(referencedCell, cellsSeen));
-    cellsSeen.remove(c);
   }
 
   private void markAsValidatedLoop(Cell startCell, LinkedHashSet<Cell> cells) {
     Iterator<Cell> i = cells.iterator();
     while (i.hasNext()) {
       Cell c = i.next();
+      c.setValue(new InvalidValue(c.getExpression()));
       invalidCells.remove(c);
       if(c.equals(startCell)) {
         c.setValue(LoopValue.INSTANCE);

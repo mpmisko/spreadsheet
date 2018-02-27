@@ -58,7 +58,7 @@ public class Cell implements Tracker<Cell>{
         .map(location -> spreadsheet.getCell(location))
         .collect(Collectors.toSet());
     referencedCells = newCells;
-    referencedCells.forEach(cell ->  cell.addTracer(this));
+    referencedCells.forEach(cell ->  cell.addTracker(this));
     notifyTrackers();
   }
 
@@ -80,7 +80,7 @@ public class Cell implements Tracker<Cell>{
     cellsReferencedBy.remove(tracker);
   }
 
-  private void addTracer(Tracker<Cell> tracker) {
+  private void addTracker(Tracker<Cell> tracker) {
     cellsReferencedBy.add(tracker);
   }
 
