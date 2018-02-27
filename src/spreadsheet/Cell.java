@@ -57,7 +57,6 @@ public class Cell implements Tracker<Cell>{
         .stream()
         .map(location -> spreadsheet.getCell(location))
         .collect(Collectors.toSet());
-    System.out.println(expression + " " + newCells.size());
     referencedCells = newCells;
     referencedCells.forEach(cell ->  cell.addTracer(this));
     notifyTrackers();

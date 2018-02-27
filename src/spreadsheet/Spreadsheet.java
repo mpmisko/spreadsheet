@@ -38,7 +38,9 @@ public class Spreadsheet implements Tabular {
     if(cellMap.containsKey(location)) {
       return cellMap.get(location).getValue();
     }
-    return new StringValue("");
+    Cell c = new Cell(this);
+    cellMap.put(location, c);
+    return c.getValue() ;
   }
 
   @Override
