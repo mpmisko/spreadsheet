@@ -10,12 +10,11 @@ public class Main {
   public static void main(String[] args) {
     Spreadsheet s = new Spreadsheet();
     SpreadsheetGUI gui = new SpreadsheetGUI(s, DEFAULT_NUM_ROWS, DEFAULT_NUM_COLUMNS);
-    if(args.length > 0) {
+    if (args.length > 0) {
       int rows = Integer.parseInt(args[0]);
       int columns = Integer.parseInt(args[1]);
       gui = new SpreadsheetGUI(s, rows, columns);
     }
     gui.start();
   }
-
 }

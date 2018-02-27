@@ -48,7 +48,6 @@ public class TestSetExpression {
     spreadsheet.recompute();
 
     assertIsString(spreadsheet.getValue(c2), "hello");
-
   }
 
   @Test

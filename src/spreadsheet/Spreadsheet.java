@@ -27,7 +27,7 @@ public class Spreadsheet implements Tabular {
 
   @Override
   public void setExpression(CellLocation location, String expression) {
-    if(cellMap.containsKey(location)) {
+    if (cellMap.containsKey(location)) {
       Cell cell = cellMap.get(location);
       cell.setExpression(expression);
     } else {
@@ -40,12 +40,12 @@ public class Spreadsheet implements Tabular {
 
   @Override
   public Value getValue(CellLocation location) {
-    if(cellMap.containsKey(location)) {
+    if (cellMap.containsKey(location)) {
       return cellMap.get(location).getValue();
     }
     Cell c = new Cell(this, location);
     cellMap.put(location, c);
-    return c.getValue() ;
+    return c.getValue();
   }
 
   @Override
@@ -57,21 +57,20 @@ public class Spreadsheet implements Tabular {
 
   @Override
   public String getExpression(CellLocation location) {
-    if(cellMap.containsKey(location)) {
+    if (cellMap.containsKey(location)) {
       return cellMap.get(location).getExpression();
     }
     return "";
   }
 
   protected Cell getCell(CellLocation location) {
-    if(cellMap.containsKey(location)) {
+    if (cellMap.containsKey(location)) {
       return cellMap.get(location);
     }
     Cell c = new Cell(this, location);
     cellMap.put(location, c);
     return c;
   }
-
 
   protected boolean shouldBeRecomputed(Cell cell) {
     return invalidCells.contains(cell);
@@ -85,11 +84,11 @@ public class Spreadsheet implements Tabular {
     if (!checkForLoops(cell, new LinkedHashSet<>())) {
       LinkedList<Cell> cellsToRecompute = new LinkedList<>();
       cellsToRecompute.add(cell);
-      while(!cellsToRecompute.isEmpty()) {
+      while (!cellsToRecompute.isEmpty()) {
         boolean hasUncomputedReferencedCells = false;
         Cell currCell = cellsToRecompute.poll();
         for (Cell referencedCell : currCell.getReferencedCells()) {
-          if(shouldBeRecomputed(referencedCell)) {
+          if (shouldBeRecomputed(referencedCell)) {
             cellsToRecompute.addFirst(referencedCell);
             hasUncomputedReferencedCells = true;
           }
@@ -105,7 +104,7 @@ public class Spreadsheet implements Tabular {
   }
 
   private boolean checkForLoops(Cell c, LinkedHashSet<Cell> cellsSeen) {
-    if(cellsSeen.contains(c)) {
+    if (cellsSeen.contains(c)) {
       markAsValidatedLoop(c, cellsSeen);
       return true;
     } else {
@@ -125,7 +124,7 @@ public class Spreadsheet implements Tabular {
       Cell c = i.next();
       c.setValue(new InvalidValue(c.getExpression()));
       invalidCells.remove(c);
-      if(c.equals(startCell)) {
+      if (c.equals(startCell)) {
         c.setValue(LoopValue.INSTANCE);
         i.forEachRemaining(
             cell -> {
@@ -139,27 +138,24 @@ public class Spreadsheet implements Tabular {
   private void calculateCellValue(Cell cell) {
     Map<CellLocation, Double> cellVals = new HashMap<>();
     for (Cell referencedCell : cell.getReferencedCells()) {
-      referencedCell.getValue().evaluate(new ValueEvaluator() {
-        @Override
-        public void evaluateDouble(double value) {
-          cellVals.put(referencedCell.getLocation(), value);
-        }
+      referencedCell
+          .getValue()
+          .evaluate(
+              new ValueEvaluator() {
+                @Override
+                public void evaluateDouble(double value) {
+                  cellVals.put(referencedCell.getLocation(), value);
+                }
 
-        @Override
-        public void evaluateLoop() {
+                @Override
+                public void evaluateLoop() {}
 
-        }
+                @Override
+                public void evaluateString(String expression) {}
 
-        @Override
-        public void evaluateString(String expression) {
-
-        }
-
-        @Override
-        public void evaluateInvalid(String expression) {
-
-        }
-      });
+                @Override
+                public void evaluateInvalid(String expression) {}
+              });
     }
     Value val = ExpressionUtils.computeValue(cell.getExpression(), cellVals);
     cell.setValue(val);
