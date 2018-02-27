@@ -30,11 +30,25 @@ public class TestSetExpression {
 
     spreadsheet.recompute();
 
+    System.out.println(spreadsheet.getValue(c2));
+
     assertIsDouble(spreadsheet.getValue(c1), 25);
     assertIsString(spreadsheet.getValue(c2), "hello");
     assertIsDouble(spreadsheet.getValue(d1), 32);
     assertIsDouble(spreadsheet.getValue(b1), 57);
     assertIsDouble(spreadsheet.getValue(a1), 58);
+  }
+
+  @Test
+  public void testSetStringExpression() {
+    Spreadsheet spreadsheet = new Spreadsheet();
+
+    spreadsheet.setExpression(c2, "hello");
+
+    spreadsheet.recompute();
+
+    assertIsString(spreadsheet.getValue(c2), "hello");
+
   }
 
   @Test

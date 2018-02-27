@@ -3,10 +3,8 @@ package spreadsheet;
 import common.api.CellLocation;
 import common.api.ExpressionUtils;
 import common.api.Tabular;
-import common.api.value.DoubleValue;
 import common.api.value.InvalidValue;
 import common.api.value.LoopValue;
-import common.api.value.StringValue;
 import common.api.value.Value;
 import common.api.value.ValueEvaluator;
 import java.util.HashMap;
@@ -32,9 +30,11 @@ public class Spreadsheet implements Tabular {
     if(cellMap.containsKey(location)) {
       Cell cell = cellMap.get(location);
       cell.setExpression(expression);
-      cell.setValue(new StringValue(expression));
     } else {
-      cellMap.put(location, new Cell(this, location, expression, new StringValue(expression)));
+      Cell cell = new Cell(this, location);
+      cell.setExpression(expression);
+      cellMap.put(location, cell);
+      invalidCells.add(cell);
     }
   }
 
