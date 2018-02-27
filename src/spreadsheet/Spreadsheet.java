@@ -1,14 +1,18 @@
 package spreadsheet;
 
 import common.api.CellLocation;
+import common.api.ExpressionUtils;
 import common.api.Tabular;
+import common.api.value.DoubleValue;
 import common.api.value.InvalidValue;
 import common.api.value.LoopValue;
 import common.api.value.StringValue;
 import common.api.value.Value;
+import common.api.value.ValueEvaluator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,7 +34,7 @@ public class Spreadsheet implements Tabular {
       cell.setExpression(expression);
       cell.setValue(new StringValue(expression));
     } else {
-      cellMap.put(location, new Cell(this, expression, new StringValue(expression)));
+      cellMap.put(location, new Cell(this, location, expression, new StringValue(expression)));
     }
   }
 
@@ -39,7 +43,7 @@ public class Spreadsheet implements Tabular {
     if(cellMap.containsKey(location)) {
       return cellMap.get(location).getValue();
     }
-    Cell c = new Cell(this);
+    Cell c = new Cell(this, location);
     cellMap.put(location, c);
     return c.getValue() ;
   }
@@ -63,7 +67,7 @@ public class Spreadsheet implements Tabular {
     if(cellMap.containsKey(location)) {
       return cellMap.get(location);
     }
-    Cell c = new Cell(this);
+    Cell c = new Cell(this, location);
     cellMap.put(location, c);
     return c;
   }
@@ -78,16 +82,40 @@ public class Spreadsheet implements Tabular {
   }
 
   private void recomputeCell(Cell cell) {
-    checkForLoops(cell, new LinkedHashSet<>());
+    if (!checkForLoops(cell, new LinkedHashSet<>())) {
+      LinkedList<Cell> cellsToRecompute = new LinkedList<>();
+      cellsToRecompute.add(cell);
+      while(!cellsToRecompute.isEmpty()) {
+        boolean hasUncomputedReferencedCells = false;
+        Cell currCell = cellsToRecompute.poll();
+        for (Cell referencedCell : currCell.getReferencedCells()) {
+          if(shouldBeRecomputed(referencedCell)) {
+            cellsToRecompute.addFirst(referencedCell);
+            hasUncomputedReferencedCells = true;
+          }
+        }
+        if (hasUncomputedReferencedCells) {
+          cellsToRecompute.addLast(currCell);
+        } else {
+          calculateCellValue(currCell);
+          invalidCells.remove(currCell);
+        }
+      }
+    }
   }
 
-  private void checkForLoops(Cell c, LinkedHashSet<Cell> cellsSeen) {
+  private boolean checkForLoops(Cell c, LinkedHashSet<Cell> cellsSeen) {
     if(cellsSeen.contains(c)) {
       markAsValidatedLoop(c, cellsSeen);
+      return true;
     } else {
+      boolean seen = false;
       cellsSeen.add(c);
-      c.getReferencedCells().forEach(referencedCell -> checkForLoops(referencedCell, cellsSeen));
+      for (Cell cell : c.getReferencedCells()) {
+        seen = seen || checkForLoops(cell, cellsSeen);
+      }
       cellsSeen.remove(c);
+      return seen;
     }
   }
 
@@ -106,5 +134,34 @@ public class Spreadsheet implements Tabular {
             });
       }
     }
+  }
+
+  private void calculateCellValue(Cell cell) {
+    Map<CellLocation, Double> cellVals = new HashMap<>();
+    for (Cell referencedCell : cell.getReferencedCells()) {
+      referencedCell.getValue().evaluate(new ValueEvaluator() {
+        @Override
+        public void evaluateDouble(double value) {
+          cellVals.put(referencedCell.getLocation(), value);
+        }
+
+        @Override
+        public void evaluateLoop() {
+
+        }
+
+        @Override
+        public void evaluateString(String expression) {
+
+        }
+
+        @Override
+        public void evaluateInvalid(String expression) {
+
+        }
+      });
+    }
+    Value val = ExpressionUtils.computeValue(cell.getExpression(), cellVals);
+    cell.setValue(val);
   }
 }

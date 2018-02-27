@@ -1,5 +1,6 @@
 package spreadsheet;
 
+import common.api.CellLocation;
 import common.api.ExpressionUtils;
 import common.api.monitor.Tracker;
 import common.api.value.InvalidValue;
@@ -12,21 +13,23 @@ import java.util.stream.Collectors;
 public class Cell implements Tracker<Cell>{
 
   private final Spreadsheet spreadsheet;
+  private final CellLocation location;
   private String expression;
   private Value value;
   private Set<Cell> referencedCells;
   private Set<Tracker<Cell>> cellsReferencedBy;
 
-  public Cell(Spreadsheet spreadsheet, String expression, Value value) {
+  public Cell(Spreadsheet spreadsheet, CellLocation location, String expression, Value value) {
     this.spreadsheet = spreadsheet;
+    this.location = location;
     this.expression = expression;
     this.value = value;
     this.referencedCells = new HashSet<>();
     this.cellsReferencedBy = new HashSet<>();
   }
 
-  public Cell(Spreadsheet spreadsheet) {
-    this(spreadsheet, "", new StringValue(""));
+  public Cell(Spreadsheet spreadsheet, CellLocation location) {
+    this(spreadsheet, location,"", new StringValue(""));
   }
 
   @Override
@@ -36,6 +39,10 @@ public class Cell implements Tracker<Cell>{
       setValue(new InvalidValue(expression));
       notifyTrackers();
     }
+  }
+
+  public CellLocation getLocation() {
+    return location;
   }
 
   public String getExpression() {
