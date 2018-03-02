@@ -122,7 +122,7 @@ public class Spreadsheet implements Tabular {
     Iterator<Cell> i = cells.iterator();
     while (i.hasNext()) {
       Cell c = i.next();
-      c.setValue(new InvalidValue(c.getExpression()));
+      c.setExpression(c.getExpression());
       invalidCells.remove(c);
       if (c.equals(startCell)) {
         c.setValue(LoopValue.INSTANCE);

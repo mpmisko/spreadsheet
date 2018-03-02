@@ -1,7 +1,8 @@
 package spreadsheet;
 
+
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import common.api.value.Value;
 import common.api.value.ValueEvaluator;
